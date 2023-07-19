@@ -6,6 +6,7 @@ include "../node_modules/circomlib/circuits/switcher.circom";
 include "../node_modules/circomlib/circuits/comparators.circom";
 include "./merkle-proof-verifier.circom";
 include "./nullifier-check.circom";
+include "./merkle-adder.circom";
 
 // AllowedCommitments: is a list of allowed commitments
 // MessageHashesRoot: is a merkle root of all message hashes
@@ -35,25 +36,43 @@ include "./nullifier-check.circom";
 // H(newAllowList, newAllowedCommitments, newMessageHashesRoot, newProofsMerkleRoot)
 // or H(AllowList, output_commitment, rand)
 
+// For the demo
+// step_in is H(AllowList, allowedCommitmentsRoot, MessageHashesRoot)
+// step_out is H(AllowList, newAllowedCommitments, newMessageHashesRoot)
+
+// step_in is H(allowedCommitmentsRoot, messageHashesRoot)
+// step_out is H(newAllowedCommitments, newMessageHashesRoot)
+// or step_out is output_commitment
+
+
 
 template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
+    signal input step_in[1];
+    signal output step_out[1];
+    signal input allowedCommitmentsRoot;
+    signal input allowedCommitmentsPathElements[maxInputs][MerkleTreeDepth];
+    signal input allowedCommitmentsPathIndex[maxInputs];
     signal input messageHashesRoot;
     signal input messageHashPathElements[MerkleTreeDepth];
     signal input messageHashPathIndex;
     signal input nullifiers[maxInputs]; // Nullifiers for input notes
     signal input commitmentsOut[maxOutputs]; // hash of output notes
     signal input isTransactionMode;
-
     signal input token;
     signal input publicKey[2]; // Public key for signature verification denoted to as PK
     signal input randomIn[maxInputs];
     signal input valueIn[maxInputs];
     signal input leavesIndices[maxInputs];
     signal input nullifyingKey;
+    signal input addedCommitment;
+    signal input addedCommitmentPathElements[MerkleTreeDepth];
+    signal input addedCommitmentPathIndex;
 
-    // signal input commInTest;
-
-    signal output noteCommitments[maxInputs];
+    component stepInHasher = Poseidon(2);
+    stepInHasher.inputs[0] <== allowedCommitmentsRoot;
+    stepInHasher.inputs[1] <== messageHashesRoot;
+    // verify that step_in is correct
+    step_in[0] === stepInHasher.out;
 
 
     // PROVE THAT THIS IS A VALID TRANSACTION
@@ -117,6 +136,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         // 5. Verify Merkle proofs of membership
     component noteCommitmentsIn[maxInputs];
     component npkIn[maxInputs]; // note public keys
+    component allowedCommitmentVerifier[maxInputs];
     var sumIn = 0;
 
     for(var i=0; i<maxInputs; i++) {
@@ -130,13 +150,46 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         noteCommitmentsIn[i].inputs[1] <== token;
         noteCommitmentsIn[i].inputs[2] <== valueIn[i];
 
-        noteCommitments[i] <== noteCommitmentsIn[i].out;
+        // noteCommitments[i] <== noteCommitmentsIn[i].out;
+
+        allowedCommitmentVerifier[i] = MerkleProofVerifier(MerkleTreeDepth);
+        allowedCommitmentVerifier[i].leaf <== noteCommitmentsIn[i].out;
+        allowedCommitmentVerifier[i].leafIndex <== allowedCommitmentsPathIndex[i];
+        for(var j=0; j<MerkleTreeDepth; j++) {
+            allowedCommitmentVerifier[i].pathElements[j] <== allowedCommitmentsPathElements[i][j];
+        }
+        allowedCommitmentVerifier[i].merkleRoot <== allowedCommitmentsRoot;
+        allowedCommitmentVerifier[i].enabled <== 1 - isDummy[i].out;
     }
 
+    // Verify that addedCommitment is in the output commitments
+    var numEqual = 0;
+    component isAddedEqual[maxOutputs];
+    for(var i=0; i<maxOutputs; i++) {
+        isAddedEqual[i] = IsEqual();
+        isAddedEqual[i].in[0] <== addedCommitment;
+        isAddedEqual[i].in[1] <== commitmentsOut[i];
+        numEqual += isAddedEqual[i].out;
+    }
+    numEqual === 1;
 
     // noteCommitments[0] === commInTest;
 
+    // Compute the step_out
+    // compute new allowedCommitmentsRoot
+    component allowedCommitmentsRootAdder = MerkleAdder(MerkleTreeDepth, zeroLeaf);
+    allowedCommitmentsRootAdder.root <== allowedCommitmentsRoot;
+    allowedCommitmentsRootAdder.leaf <== addedCommitment;
+    allowedCommitmentsRootAdder.leafIndex <== addedCommitmentPathIndex;
+    for(var j=0; j<MerkleTreeDepth; j++) {
+        allowedCommitmentsRootAdder.pathElements[j] <== addedCommitmentPathElements[j];
+    }
+
+    component stepOutHasher = Poseidon(2);
+    stepOutHasher.inputs[0] <== allowedCommitmentsRootAdder.newRoot;
+    stepOutHasher.inputs[1] <== messageHashesRoot;
+    step_out[0] <== stepOutHasher.out;
 
 }
 
-component main{public [messageHashesRoot]} = Step(16, 13, 13, 2051258411002736885948763699317990061539314419500486054347250703186609807356); // bytes32(uint256(keccak256("Railgun")) % SNARK_SCALAR_FIELD);
+component main{public [step_in]} = Step(16, 13, 13, 2051258411002736885948763699317990061539314419500486054347250703186609807356); // bytes32(uint256(keccak256("Railgun")) % SNARK_SCALAR_FIELD);
