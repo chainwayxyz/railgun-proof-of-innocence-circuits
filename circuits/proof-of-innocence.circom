@@ -52,6 +52,14 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     signal input allowedCommitmentsRoot;
     signal input allowedCommitmentsPathElements[maxInputs][MerkleTreeDepth];
     signal input allowedCommitmentsPathIndex[maxInputs];
+
+    signal input proofOfInnocencesRoot;
+    signal input proofOfInnocencesPathElements[maxInputs][MerkleTreeDepth];
+    signal input proofOfInnocencesPathIndex[maxInputs];
+    signal input proofOfInnocencesRandIn[maxInputs];
+
+    signal input isInAllowedCommitments[maxInputs];
+
     signal input messageHashesRoot;
     signal input messageHashPathElements[MerkleTreeDepth];
     signal input messageHashPathIndex;
@@ -67,10 +75,13 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     signal input addedCommitment;
     signal input addedCommitmentPathElements[MerkleTreeDepth];
     signal input addedCommitmentPathIndex;
+    signal input randomOut; // Blinding for output note
+    signal input isLastStep;
 
-    component stepInHasher = Poseidon(2);
+    component stepInHasher = Poseidon(3);
     stepInHasher.inputs[0] <== allowedCommitmentsRoot;
     stepInHasher.inputs[1] <== messageHashesRoot;
+    stepInHasher.inputs[2] <== proofOfInnocencesRoot;
     // verify that step_in is correct
     step_in[0] === stepInHasher.out;
 
@@ -137,6 +148,8 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     component noteCommitmentsIn[maxInputs];
     component npkIn[maxInputs]; // note public keys
     component allowedCommitmentVerifier[maxInputs];
+    component proofOfInnocencesVerifier[maxInputs];
+    component proofOfInnocencesHasher[maxInputs];
     var sumIn = 0;
 
     for(var i=0; i<maxInputs; i++) {
@@ -159,7 +172,22 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
             allowedCommitmentVerifier[i].pathElements[j] <== allowedCommitmentsPathElements[i][j];
         }
         allowedCommitmentVerifier[i].merkleRoot <== allowedCommitmentsRoot;
-        allowedCommitmentVerifier[i].enabled <== 1 - isDummy[i].out;
+        allowedCommitmentVerifier[i].enabled <== (1 - isDummy[i].out)*isInAllowedCommitments[i];
+
+
+        proofOfInnocencesHasher[i] = Poseidon(2);
+        proofOfInnocencesHasher[i].inputs[0] <== noteCommitmentsIn[i].out;
+        proofOfInnocencesHasher[i].inputs[1] <== proofOfInnocencesRandIn[i];
+
+        proofOfInnocencesVerifier[i] = MerkleProofVerifier(MerkleTreeDepth);
+        proofOfInnocencesVerifier[i].leaf <== proofOfInnocencesHasher[i].out;
+        proofOfInnocencesVerifier[i].leafIndex <== proofOfInnocencesPathIndex[i];
+        for(var j=0; j<MerkleTreeDepth; j++) {
+            proofOfInnocencesVerifier[i].pathElements[j] <== proofOfInnocencesPathElements[i][j];
+        }
+        proofOfInnocencesVerifier[i].merkleRoot <== proofOfInnocencesRoot;
+        proofOfInnocencesVerifier[i].enabled <== (1 - isDummy[i].out)*(1 - isInAllowedCommitments[i]);
+
     }
 
     // Verify that addedCommitment is in the output commitments
@@ -185,10 +213,20 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         allowedCommitmentsRootAdder.pathElements[j] <== addedCommitmentPathElements[j];
     }
 
-    component stepOutHasher = Poseidon(2);
+    component stepOutHasher = Poseidon(3);
     stepOutHasher.inputs[0] <== allowedCommitmentsRootAdder.newRoot;
     stepOutHasher.inputs[1] <== messageHashesRoot;
-    step_out[0] <== stepOutHasher.out;
+    stepOutHasher.inputs[2] <== proofOfInnocencesRoot;
+
+    component lastStepHasher = Poseidon(2);
+    lastStepHasher.inputs[0] <== addedCommitment;
+    lastStepHasher.inputs[1] <== randomOut;
+    // step_out[0] <== stepOutHasher.out;
+    component outputSwitcher = Switcher();
+    outputSwitcher.sel <== isLastStep;
+    outputSwitcher.L <== stepOutHasher.out;
+    outputSwitcher.R <== lastStepHasher.out;
+    step_out[0] <== outputSwitcher.outL;
 
 }
 
