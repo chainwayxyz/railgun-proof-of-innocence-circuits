@@ -11,7 +11,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     //********************** Public Signals *********************************
     signal input railgunTxidMerkleroot;
     signal input allowListRoot;
-    signal output outBlindedCommitment;
+    signal output outBlindedCommitments[maxOutputs];
     //***********************************************************************
 
     //********************** Private Signals ********************************
@@ -34,9 +34,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     signal input railgunTxidPathIndex;
     signal input allowListLeavesIndices[maxInputs];
     signal input allowListPathElements[maxInputs][MerkleTreeDepth];
-    signal input outCommitment;
-    signal input outCommitmentRand;
-    signal input outCommitmentLeafIndex;
+    signal input inBlindedCommitments[maxInputs];
     //***********************************************************************    
     
 
@@ -100,7 +98,8 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     component noteCommitmentsIn[maxInputs];
     component npkIn[maxInputs]; // note public keys
     component merkleVerifier[maxInputs];
-    component inBlindedCommitment[maxInputs];
+    component inBlindedCommitment1[maxInputs];
+    component inBlindedCommitment2[maxInputs];
     var sumIn = 0;
 
     for(var i=0; i<maxInputs; i++) {
@@ -114,14 +113,21 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         noteCommitmentsIn[i].inputs[1] <== token;
         noteCommitmentsIn[i].inputs[2] <== valueIn[i];
 
-        inBlindedCommitment[i] = Poseidon(3);
-        inBlindedCommitment[i].inputs[0] <== noteCommitmentsIn[i].out;
-        inBlindedCommitment[i].inputs[1] <== randomIn[i];
-        inBlindedCommitment[i].inputs[2] <== leavesIndices[i];
+        inBlindedCommitment1[i] = Poseidon(3);
+        inBlindedCommitment1[i].inputs[0] <== noteCommitmentsIn[i].out;
+        inBlindedCommitment1[i].inputs[1] <== npkIn[i].out;
+        inBlindedCommitment1[i].inputs[2] <== leavesIndices[i];
+
+        inBlindedCommitment2[i] = Poseidon(3);
+        inBlindedCommitment2[i].inputs[0] <== noteCommitmentsIn[i].out;
+        inBlindedCommitment2[i].inputs[1] <== npkIn[i].out;
+        inBlindedCommitment2[i].inputs[2] <== railgunTxidHasher.out;
+
+        0 === (inBlindedCommitment1[i].out - inBlindedCommitments[i]) * (inBlindedCommitment2[i].out - inBlindedCommitments[i]);
 
 
         merkleVerifier[i] = MerkleProofVerifier(MerkleTreeDepth);
-        merkleVerifier[i].leaf <== inBlindedCommitment[i].out;
+        merkleVerifier[i].leaf <== inBlindedCommitments[i];
         merkleVerifier[i].leafIndex <== allowListLeavesIndices[i];
         for(var j=0; j<MerkleTreeDepth; j++) {
             merkleVerifier[i].pathElements[j] <== allowListPathElements[i][j];
@@ -138,9 +144,8 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     component n2b[maxOutputs];
     component outNoteHash[maxOutputs];
     component outNoteChecker[maxOutputs];
-    component outEqualCounter[maxOutputs];
+    component outBlindedCommitmentHasher[maxOutputs];
     var sumOut = 0;
-    var outEqualCount = 0;
     for(var i=0; i<maxOutputs; i++){
         // 6. Verify output value is 120-bits
         n2b[i] = Num2Bits(120);
@@ -157,28 +162,17 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         outNoteChecker[i].in[1] <== outNoteHash[i].out;
         outNoteChecker[i].enabled <== commitmentsOut[i] - zeroLeaf;
 
-        outEqualCounter[i] = IsEqual();
-        outEqualCounter[i].in[0] <== commitmentsOut[i];
-        outEqualCounter[i].in[1] <== outCommitment;
-        outEqualCount = outEqualCount + outEqualCounter[i].out;
+        outBlindedCommitmentHasher[i] = Poseidon(3);
+        outBlindedCommitmentHasher[i].inputs[0] <== commitmentsOut[i];
+        outBlindedCommitmentHasher[i].inputs[1] <== npkOut[i];
+        outBlindedCommitmentHasher[i].inputs[2] <== railgunTxidHasher.out;
+        outBlindedCommitments[i] <== outBlindedCommitmentHasher[i].out;
 
         sumOut = sumOut + valueOut[i];
     }
 
-    // Verify that we output exactly one commitment
-    outEqualCount === 1;
-
     // 8. Verify balance property
     sumIn === sumOut;
-
-
-    component outBlindedCommitmentHasher = Poseidon(3);
-    outBlindedCommitmentHasher.inputs[0] <== outCommitment;
-    outBlindedCommitmentHasher.inputs[1] <== outCommitmentRand;
-    outBlindedCommitmentHasher.inputs[2] <== outCommitmentLeafIndex;
-    outBlindedCommitment <== outBlindedCommitmentHasher.out;
-
-
 }
 
 component main{public [railgunTxidMerkleroot, allowListRoot]} = Step(16, 13, 13, 2051258411002736885948763699317990061539314419500486054347250703186609807356); // bytes32(uint256(keccak256("Railgun")) % SNARK_SCALAR_FIELD);
