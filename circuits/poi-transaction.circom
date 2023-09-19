@@ -35,6 +35,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     signal input allowListLeavesIndices[maxInputs];
     signal input allowListPathElements[maxInputs][MerkleTreeDepth];
     signal input outCommitment;
+    signal input outCommitmentLeafIndex;
     //***********************************************************************    
     
 
@@ -112,9 +113,10 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         noteCommitmentsIn[i].inputs[1] <== token;
         noteCommitmentsIn[i].inputs[2] <== valueIn[i];
 
-        inBlindedCommitment[i] = Poseidon(2);
+        inBlindedCommitment[i] = Poseidon(3);
         inBlindedCommitment[i].inputs[0] <== noteCommitmentsIn[i].out;
         inBlindedCommitment[i].inputs[1] <== npkIn[i].out;
+        inBlindedCommitment[i].inputs[2] <== leavesIndices[i];
 
 
         merkleVerifier[i] = MerkleProofVerifier(MerkleTreeDepth);
@@ -169,9 +171,10 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     sumIn === sumOut;
 
 
-    component outBlindedCommitmentHasher = Poseidon(2);
+    component outBlindedCommitmentHasher = Poseidon(3);
     outBlindedCommitmentHasher.inputs[0] <== outCommitment;
     outBlindedCommitmentHasher.inputs[1] <== npkOut[0];
+    outBlindedCommitmentHasher.inputs[2] <== outCommitmentLeafIndex;
     outBlindedCommitment <== outBlindedCommitmentHasher.out;
 
 
