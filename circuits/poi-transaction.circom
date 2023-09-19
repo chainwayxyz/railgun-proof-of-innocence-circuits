@@ -35,6 +35,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     signal input allowListLeavesIndices[maxInputs];
     signal input allowListPathElements[maxInputs][MerkleTreeDepth];
     signal input outCommitment;
+    signal input outCommitmentRand;
     signal input outCommitmentLeafIndex;
     //***********************************************************************    
     
@@ -115,7 +116,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
 
         inBlindedCommitment[i] = Poseidon(3);
         inBlindedCommitment[i].inputs[0] <== noteCommitmentsIn[i].out;
-        inBlindedCommitment[i].inputs[1] <== npkIn[i].out;
+        inBlindedCommitment[i].inputs[1] <== randomIn[i];
         inBlindedCommitment[i].inputs[2] <== leavesIndices[i];
 
 
@@ -173,7 +174,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
 
     component outBlindedCommitmentHasher = Poseidon(3);
     outBlindedCommitmentHasher.inputs[0] <== outCommitment;
-    outBlindedCommitmentHasher.inputs[1] <== npkOut[0];
+    outBlindedCommitmentHasher.inputs[1] <== outCommitmentRand;
     outBlindedCommitmentHasher.inputs[2] <== outCommitmentLeafIndex;
     outBlindedCommitment <== outBlindedCommitmentHasher.out;
 
