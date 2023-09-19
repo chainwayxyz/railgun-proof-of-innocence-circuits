@@ -145,6 +145,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     component outNoteHash[maxOutputs];
     component outNoteChecker[maxOutputs];
     component outBlindedCommitmentHasher[maxOutputs];
+    component isOutValueZero[maxOutputs];
     var sumOut = 0;
     for(var i=0; i<maxOutputs; i++){
         // 6. Verify output value is 120-bits
@@ -166,7 +167,11 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         outBlindedCommitmentHasher[i].inputs[0] <== commitmentsOut[i];
         outBlindedCommitmentHasher[i].inputs[1] <== npkOut[i];
         outBlindedCommitmentHasher[i].inputs[2] <== railgunTxidHasher.out;
-        outBlindedCommitments[i] <== outBlindedCommitmentHasher[i].out;
+
+        isOutValueZero[i] = IsZero();
+        isOutValueZero[i].in <== valueOut[i];
+        
+        outBlindedCommitments[i] <== outBlindedCommitmentHasher[i].out*(1 - isOutValueZero[i].out);
 
         sumOut = sumOut + valueOut[i];
     }

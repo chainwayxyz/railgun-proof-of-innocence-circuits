@@ -6,7 +6,7 @@
     "scripts": {
       "test": " mocha --exit --timeout 30000",
       "compile": "circom circuits/poi-transaction.circom --r1cs --wasm -o artifacts/circuits",
-      "shield": "circom circuits/poi-shield.circom --r1cs --wasm -o artifacts/circuits",
+      "launch": "circom circuits/poi-launch.circom --r1cs --wasm -o artifacts/circuits",
       "build": "bash scripts/buildCircuit.sh"
     },
     "devDependencies": {
