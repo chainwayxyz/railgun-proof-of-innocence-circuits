@@ -24,7 +24,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     // signal input signature[3]; // EDDSA signature (R, s) where R is a point (x,y) and s is a scalar
     signal input randomIn[maxInputs];
     signal input valueIn[maxInputs];
-    signal input pathElements[maxInputs][MerkleTreeDepth]; // Merkle proofs of membership 
+    // signal input pathElements[maxInputs][MerkleTreeDepth]; // Merkle proofs of membership 
     signal input leavesIndices[maxInputs];
     signal input nullifyingKey;
     signal input npkOut[maxOutputs]; // Recipients' NPK
