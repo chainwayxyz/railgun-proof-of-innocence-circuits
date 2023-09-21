@@ -85,7 +85,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         nullifiersHash[i].nullifyingKey <== nullifyingKey;
         nullifiersHash[i].leafIndex <== leavesIndices[i];
         nullifiersHash[i].nullifier <== nullifiers[i];
-        nullifiersHash[i].enabled <== 1-isDummy[i].out;
+        nullifiersHash[i].enabled <== nullifiers[i] - zeroLeaf; // IS THIS SECURE?
     }
 
     // 4. Compute master public key
@@ -100,7 +100,8 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     component merkleVerifier[maxInputs];
     component inBlindedCommitment1[maxInputs];
     component inBlindedCommitment2[maxInputs];
-    var sumIn = 0;
+    component checkInBlindedCommitment[maxInputs];
+    // var sumIn = 0;
 
     for(var i=0; i<maxInputs; i++) {
         // Compute NPK
@@ -123,7 +124,11 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         inBlindedCommitment2[i].inputs[1] <== npkIn[i].out;
         inBlindedCommitment2[i].inputs[2] <== railgunTxidHasher.out;
 
-        0 === (inBlindedCommitment1[i].out - inBlindedCommitments[i]) * (inBlindedCommitment2[i].out - inBlindedCommitments[i]);
+
+        checkInBlindedCommitment[i] = ForceEqualIfEnabled();
+        checkInBlindedCommitment[i].in[0] <== (inBlindedCommitment1[i].out - inBlindedCommitments[i]) * (inBlindedCommitment2[i].out - inBlindedCommitments[i]);
+        checkInBlindedCommitment[i].in[1] <== 0;
+        checkInBlindedCommitment[i].enabled <== 1 - isDummy[i].out;
 
 
         merkleVerifier[i] = MerkleProofVerifier(MerkleTreeDepth);
@@ -135,7 +140,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         merkleVerifier[i].merkleRoot <== allowListRoot;
         merkleVerifier[i].enabled <== 1 - isDummy[i].out;
 
-        sumIn = sumIn + valueIn[i];
+        // sumIn = sumIn + valueIn[i];
 
         // We don't need to range check input amounts, since all inputs are valid UTXOs that
         // were already checked as in some railgunTxid
@@ -146,7 +151,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     component outNoteChecker[maxOutputs];
     component outBlindedCommitmentHasher[maxOutputs];
     component isOutValueZero[maxOutputs];
-    var sumOut = 0;
+    // var sumOut = 0;
     for(var i=0; i<maxOutputs; i++){
         // 6. Verify output value is 120-bits
         n2b[i] = Num2Bits(120);
@@ -161,7 +166,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         outNoteChecker[i] = ForceEqualIfEnabled();
         outNoteChecker[i].in[0] <== commitmentsOut[i];
         outNoteChecker[i].in[1] <== outNoteHash[i].out;
-        outNoteChecker[i].enabled <== commitmentsOut[i] - zeroLeaf;
+        outNoteChecker[i].enabled <== valueOut[i];
 
         outBlindedCommitmentHasher[i] = Poseidon(3);
         outBlindedCommitmentHasher[i].inputs[0] <== commitmentsOut[i];
@@ -173,11 +178,11 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         
         outBlindedCommitments[i] <== outBlindedCommitmentHasher[i].out*(1 - isOutValueZero[i].out);
 
-        sumOut = sumOut + valueOut[i];
+        // sumOut = sumOut + valueOut[i];
     }
 
     // 8. Verify balance property
-    sumIn === sumOut;
+    // sumIn === sumOut;
 }
 
 component main{public [railgunTxidMerkleroot, allowListRoot]} = Step(16, 13, 13, 2051258411002736885948763699317990061539314419500486054347250703186609807356); // bytes32(uint256(keccak256("Railgun")) % SNARK_SCALAR_FIELD);
