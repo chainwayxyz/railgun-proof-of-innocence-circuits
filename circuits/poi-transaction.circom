@@ -55,10 +55,12 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     for(var i = 0; i < maxInputs; i++) {
         nullifiersHasher.inputs[i] <== nullifiers[i];
     }
+
     component commitmentsHasher = Poseidon(maxOutputs);
     for(var i = 0; i < maxOutputs; i++) {
         commitmentsHasher.inputs[i] <== commitmentsOut[i];
     }
+
     component railgunTxidHasher = Poseidon(3);
     railgunTxidHasher.inputs[0] <== nullifiersHasher.out;
     railgunTxidHasher.inputs[1] <== commitmentsHasher.out;
@@ -74,7 +76,9 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     }
     railgunTxidVerifier.leafIndex <== railgunTxidMerkleProofIndices;
     railgunTxidVerifier.leaf <== railgunTxidHasher.out;
+
     railgunTxidVerifier.enabled <== 1;
+
     //***********************************************************************
 
 
@@ -93,7 +97,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         nullifiersHash[i].nullifyingKey <== nullifyingKey;
         nullifiersHash[i].leafIndex <== utxoPositionsIn[i];
         nullifiersHash[i].nullifier <== nullifiers[i];
-        nullifiersHash[i].enabled <== nullifiers[i] - zeroLeaf;
+        nullifiersHash[i].enabled <== 1 - isDummy[i].out;
     }
 
     // 4. Compute master public key
@@ -115,17 +119,20 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         npkIn[i] = Poseidon(2);
         npkIn[i].inputs[0] <== mpk.out;
         npkIn[i].inputs[1] <== randomsIn[i];
+
         // Compute note commitment
         noteCommitmentsIn[i] = Poseidon(3);
         noteCommitmentsIn[i].inputs[0] <== npkIn[i].out;
         noteCommitmentsIn[i].inputs[1] <== token;
         noteCommitmentsIn[i].inputs[2] <== valuesIn[i];
 
+        // Shield blinded commitment
         inBlindedCommitment1[i] = Poseidon(3);
         inBlindedCommitment1[i].inputs[0] <== noteCommitmentsIn[i].out;
         inBlindedCommitment1[i].inputs[1] <== npkIn[i].out;
-        inBlindedCommitment1[i].inputs[2] <== utxoPositionsIn[i];
+        inBlindedCommitment1[i].inputs[2] <== utxoPositionsIn[i]; // TODO-JMJ: duplicates on 2nd tree
 
+        // Transact blinded commitment
         inBlindedCommitment2[i] = Poseidon(3);
         inBlindedCommitment2[i].inputs[0] <== noteCommitmentsIn[i].out;
         inBlindedCommitment2[i].inputs[1] <== npkIn[i].out;
@@ -187,4 +194,4 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     }
 }
 
-component main{public [anyRailgunTxidMerklerootAfterTransaction, poiMerkleroots]} = Step(16, 13, 13, 2051258411002736885948763699317990061539314419500486054347250703186609807356); // bytes32(uint256(keccak256("Railgun")) % SNARK_SCALAR_FIELD);
+component main{public [anyRailgunTxidMerklerootAfterTransaction, poiMerkleroots]} = Step(16, 13, 13, 0);

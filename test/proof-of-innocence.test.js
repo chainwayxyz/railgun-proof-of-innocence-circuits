@@ -45,17 +45,14 @@ const formatInputs = (proofInputs) => {
       proofInputs.commitmentsOut.map(hexToBigInt),
       maxOutputs,
     ),
-    spendingPublicKey: proofInputs.spendingPublicKey.map(hexToBigInt),
-    nullifyingKey: hexToBigInt(proofInputs.nullifyingKey),
+    spendingPublicKey: proofInputs.spendingPublicKey.map(BigInt),
+    nullifyingKey: BigInt(proofInputs.nullifyingKey),
     token: hexToBigInt(proofInputs.token),
     randomsIn: padWithZerosToMax(
       proofInputs.randomsIn.map(hexToBigInt),
       maxInputs,
     ),
-    valuesIn: padWithZerosToMax(
-      proofInputs.valuesIn.map(hexToBigInt),
-      maxInputs,
-    ),
+    valuesIn: padWithZerosToMax(proofInputs.valuesIn.map(BigInt), maxInputs),
     utxoPositionsIn: padWithZerosToMax(
       proofInputs.utxoPositionsIn.map(BigInt),
       maxInputs,
@@ -68,14 +65,8 @@ const formatInputs = (proofInputs) => {
       proofInputs.creationTxidsIn.map(hexToBigInt),
       maxInputs,
     ),
-    npksOut: padWithZerosToMax(
-      proofInputs.npksOut.map(hexToBigInt),
-      maxOutputs,
-    ),
-    valuesOut: padWithZerosToMax(
-      proofInputs.valuesOut.map(hexToBigInt),
-      maxOutputs,
-    ),
+    npksOut: padWithZerosToMax(proofInputs.npksOut.map(BigInt), maxOutputs),
+    valuesOut: padWithZerosToMax(proofInputs.valuesOut.map(BigInt), maxOutputs),
     railgunTxidMerkleProofIndices: hexToBigInt(
       proofInputs.railgunTxidMerkleProofIndices,
     ),
@@ -113,7 +104,7 @@ describe('Proof of Innocence', async () => {
     await circuit.checkConstraints(witness);
 
     const output = await circuit.getDecoratedOutput(witness);
-    console.log('output');
-    console.log(output);
+    // console.log('output');
+    // console.log(output);
   });
 });
