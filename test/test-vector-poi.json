@@ -1,10 +1,7 @@
 {
-  "anyRailgunTxidMerklerootAfterTransaction": "0930ac35a4b56b467adc9df642c0b5720bdc4037f1b30e4fdf7bf5e33b61fe2b",
+  "anyRailgunTxidMerklerootAfterTransaction": "190f7cb5e61a70b13e55c2a4c9239fef5ff56d4c06546dc63ee80ed82f195887",
   "blindedCommitmentsIn": [
     "0x0ebf218608fd1bf8e90d2ac7ea720b03a1f5e542a2e3617ffd20c51881937729"
-  ],
-  "blindedCommitmentsOut": [
-    "0x0ee009f8b60fd7231a25c9a15c1c52fc73c50c68270f5e0fb695b7236f956014"
   ],
   "boundParamsHash": "0a4e7bed8287c629fd064665543dc71fdc09b0ab9df7d556f24a1f2f9f018dc7",
   "commitmentsOut": [
@@ -71,5 +68,8 @@
       "000e697f1a3bb53e29fc82ef1123973d1e6cf2147798951530d72c7b45b4e6ff",
       "000e697f1a3bb53e29fc82ef1123973d1e6cf2147798951530d72c7b45b4e6ff"
     ]
+  ],
+  "blindedCommitmentsOut": [
+    "0x0b5fd5ec3bcffa54ca75a1f7a45de29d688b29337240f9c6e361227d0f7b0e28"
   ]
 }
