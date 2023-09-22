@@ -43,8 +43,8 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     // POI tree
     signal input poiInMerkleProofIndices[maxInputs];
     signal input poiInMerkleProofPathElements[maxInputs][MerkleTreeDepth];
-    //***********************************************************************    
-    
+    //***********************************************************************
+
 
 
 
