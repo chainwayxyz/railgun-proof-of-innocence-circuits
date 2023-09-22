@@ -21,7 +21,6 @@ const padWithArraysOfZerosToMaxAndLength = (array, max, length) => {
   while (padded.length < max) {
     padded.push(new Array(length).fill(0n));
   }
-  console.log(padded);
   return padded;
 };
 
@@ -101,7 +100,7 @@ const formatInputs = (proofInputs) => {
 };
 
 describe('Proof of Innocence', async () => {
-  it('Should test', async () => {
+  it('Should test POI circuit with mock inputs', async () => {
     const circuit = await tester('./circuits/poi-transaction.circom', {
       reduceConstraints: false,
     });
