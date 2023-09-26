@@ -5,7 +5,7 @@ if [ ! -f artifacts/circuits/ptau$POWERS_OF_TAU ]; then
   echo "Downloading powers of tau file"
   curl -L https://hermez.s3-eu-west-1.amazonaws.com/powersOfTau28_hez_final_$POWERS_OF_TAU.ptau --create-dirs -o artifacts/circuits/ptau$POWERS_OF_TAU
 fi
-circom circuits/poi-transaction.circom --r1cs --wasm --c -o artifacts/circuits
+circom circuits/poi-transaction.circom --r1cs --wasm --c --json --sym --wat -o artifacts/circuits
 npx snarkjs groth16 setup artifacts/circuits/poi-transaction.r1cs artifacts/circuits/ptau$POWERS_OF_TAU artifacts/circuits/tmp_poi-transaction.zkey
 echo "qwe" | npx snarkjs zkey contribute artifacts/circuits/tmp_poi-transaction.zkey artifacts/circuits/poi-transaction.zkey
 # npx snarkjs zkey export solidityverifier artifacts/circuits/poi-transaction.zkey artifacts/circuits/Verifier.sol
