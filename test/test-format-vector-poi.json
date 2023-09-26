@@ -1,5 +1,5 @@
 {
-  "anyRailgunTxidMerklerootAfterTransaction": "1b46a38136938935cd77b79ae27d5267ee358a30f087b7dc75038288ccfaa2f9",
+  "anyRailgunTxidMerklerootAfterTransaction": "00982696ece890aea23f350bcb75a6e65fc8844b50607ee1e685317588d6bcce",
   "blindedCommitmentsIn": [
     "0x1add5dfd0299e9dc5af6fdfc0d86c0aaad29f9f9ca61674f67d3d185e28802e2"
   ],
@@ -43,5 +43,31 @@
   "utxoPositionsIn": [0],
   "utxoTreesIn": 0,
   "valuesIn": ["109725000000000000000000"],
-  "valuesOut": ["109725000000000000000000"]
+  "valuesOut": ["109725000000000000000000"],
+  "poiMerkleroots": [
+    "0850f0b16ec108d7436a17ddf811072ea5bbfbe223fa7c64cc4673a3afed738a"
+  ],
+  "poiInMerkleProofIndices": [
+    "0000000000000000000000000000000000000000000000000000000000000000"
+  ],
+  "poiInMerkleProofPathElements": [
+    [
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436",
+      "00006ca0c504eec593ebe16d9c8b28c208e3fc95efc6aeb12ccd1c854fb6d436"
+    ]
+  ]
 }

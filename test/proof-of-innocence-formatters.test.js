@@ -1,3 +1,4 @@
+// const testVector = require('./test-vectors/inputs0.json');
 const testVector = require('./test-format-vector-poi.json');
 
 const tester = require('circom_tester').wasm;
@@ -7,6 +8,12 @@ const prefix0x = (str) => (isPrefixed(str) ? str : `0x${str}`);
 function hexToBigInt(str) {
   return BigInt(prefix0x(str));
 }
+
+const stringifySafe = (obj) => {
+  return JSON.stringify(obj, (key, value) =>
+    typeof value === 'bigint' ? value.toString(10) : value,
+  );
+};
 
 const padWithZerosToMax = (
   array,
@@ -66,6 +73,7 @@ const formatInputs = (proofInputs) => {
       proofInputs.utxoPositionsIn.map(BigInt),
       maxInputs,
     ),
+    utxoTreesIn: BigInt(proofInputs.utxoTreesIn),
     blindedCommitmentsIn: padWithZerosToMax(
       proofInputs.blindedCommitmentsIn.map(hexToBigInt),
       maxInputs,
@@ -114,6 +122,7 @@ describe('Proof of Innocence formatters', async () => {
     const inputs = testVector;
 
     const inputsBigInt = formatInputs(inputs);
+    // console.log(stringifySafe(inputsBigInt));
 
     const witness = await circuit.calculateWitness(inputsBigInt);
     await circuit.checkConstraints(witness);
