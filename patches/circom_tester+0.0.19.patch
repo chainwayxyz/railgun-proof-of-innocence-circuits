@@ -1,0 +1,13 @@
+diff --git a/node_modules/circom_tester/wasm/tester.js b/node_modules/circom_tester/wasm/tester.js
+index 1609503..e968a4d 100644
+--- a/node_modules/circom_tester/wasm/tester.js
++++ b/node_modules/circom_tester/wasm/tester.js
+@@ -174,7 +174,7 @@ class WasmTester {
+         if (!self.symbols) await self.loadSymbols();
+         for (let n in self.symbols) {
+             let v;
+-            if (utils.isDefined(witness[self.symbols[n].varIdx])) {
++            if (witness[self.symbols[n].varIdx] != null) {
+                 v = witness[self.symbols[n].varIdx].toString();
+             } else {
+                 v = "undefined";
