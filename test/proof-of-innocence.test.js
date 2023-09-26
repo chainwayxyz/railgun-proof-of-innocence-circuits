@@ -1,5 +1,3 @@
-const testVector = require('./test-vector-poi.json');
-
 let testVectors = [];
 for(let i = 0; i < 10; i++) {
   const filePath = './test-vectors/inputs' + i.toString() + '.json';
