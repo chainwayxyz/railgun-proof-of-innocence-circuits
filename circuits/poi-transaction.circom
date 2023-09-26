@@ -31,6 +31,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     signal input utxoPositionsIn[maxInputs];
     signal input blindedCommitmentsIn[maxInputs];
     signal input creationTxidsIn[maxInputs];
+    signal input utxoTreesIn;
 
     // Commitment notes data
     signal input npksOut[maxOutputs]; // Recipients' NPK
@@ -124,7 +125,7 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         inBlindedCommitment1[i] = Poseidon(3);
         inBlindedCommitment1[i].inputs[0] <== noteCommitmentsIn[i].out;
         inBlindedCommitment1[i].inputs[1] <== npkIn[i].out;
-        inBlindedCommitment1[i].inputs[2] <== utxoPositionsIn[i];
+        inBlindedCommitment1[i].inputs[2] <== utxoTreesIn * 65536 + utxoPositionsIn[i];
 
         inBlindedCommitment2[i] = Poseidon(3);
         inBlindedCommitment2[i].inputs[0] <== noteCommitmentsIn[i].out;
