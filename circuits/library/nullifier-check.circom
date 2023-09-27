@@ -1,6 +1,6 @@
 pragma circom 2.0.6;
-include "../node_modules/circomlib/circuits/poseidon.circom";
-include "../node_modules/circomlib/circuits/comparators.circom";
+include "../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../node_modules/circomlib/circuits/comparators.circom";
 
 template NullifierCheck() {
   signal input nullifier;

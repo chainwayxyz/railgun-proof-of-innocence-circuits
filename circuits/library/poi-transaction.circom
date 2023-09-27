@@ -1,24 +1,24 @@
 pragma circom 2.0.6;
 
-include "../node_modules/circomlib/circuits/poseidon.circom";
-include "../node_modules/circomlib/circuits/bitify.circom";
-include "../node_modules/circomlib/circuits/switcher.circom";
-include "../node_modules/circomlib/circuits/comparators.circom";
+include "../../node_modules/circomlib/circuits/poseidon.circom";
+include "../../node_modules/circomlib/circuits/bitify.circom";
+include "../../node_modules/circomlib/circuits/switcher.circom";
+include "../../node_modules/circomlib/circuits/comparators.circom";
 include "./merkle-proof-verifier.circom";
 include "./nullifier-check.circom";
 
-template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
+template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLeaf) {
     //********************** Public Signals *********************************
     signal input anyRailgunTxidMerklerootAfterTransaction;
-    signal input poiMerkleroots[maxInputs];
-    signal output blindedCommitmentsOut[maxOutputs];
+    signal input poiMerkleroots[nInputs];
+    signal output blindedCommitmentsOut[nOutputs];
     //***********************************************************************
 
     //********************** Private Signals ********************************
     // Railgun Transaction info
     signal input boundParamsHash; // hash of ciphertext and adapterParameters
-    signal input nullifiers[maxInputs]; // Nullifiers for input notes
-    signal input commitmentsOut[maxOutputs]; // hash of output notes
+    signal input nullifiers[nInputs]; // Nullifiers for input notes
+    signal input commitmentsOut[nOutputs]; // hash of output notes
 
     // Spender wallet info
     signal input spendingPublicKey[2]; // Public key for signature verification denoted to as PK
@@ -26,24 +26,24 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
 
     // Nullified notes data
     signal input token;
-    signal input randomsIn[maxInputs];
-    signal input valuesIn[maxInputs];
-    signal input utxoPositionsIn[maxInputs];
-    signal input blindedCommitmentsIn[maxInputs];
-    signal input creationTxidsIn[maxInputs];
+    signal input randomsIn[nInputs];
+    signal input valuesIn[nInputs];
+    signal input utxoPositionsIn[nInputs];
+    signal input blindedCommitmentsIn[nInputs];
+    signal input creationTxidsIn[nInputs];
     signal input utxoTreesIn;
 
     // Commitment notes data
-    signal input npksOut[maxOutputs]; // Recipients' NPK
-    signal input valuesOut[maxOutputs];
+    signal input npksOut[nOutputs]; // Recipients' NPK
+    signal input valuesOut[nOutputs];
 
     // Railgun txid tree
     signal input railgunTxidMerkleProofIndices;
     signal input railgunTxidMerkleProofPathElements[MerkleTreeDepth];
 
     // POI tree
-    signal input poiInMerkleProofIndices[maxInputs];
-    signal input poiInMerkleProofPathElements[maxInputs][MerkleTreeDepth];
+    signal input poiInMerkleProofIndices[nInputs];
+    signal input poiInMerkleProofPathElements[nInputs][MerkleTreeDepth];
     //***********************************************************************
 
 
@@ -53,12 +53,18 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
 
     // 1 - Calculate railgunTxid
     component nullifiersHasher = Poseidon(maxInputs);
-    for(var i = 0; i < maxInputs; i++) {
+    for(var i = 0; i < nInputs; i++) {
         nullifiersHasher.inputs[i] <== nullifiers[i];
     }
+    for(var i = nInputs; i < maxInputs; i++){
+        nullifiersHasher.inputs[i] <== zeroLeaf;
+    }
     component commitmentsHasher = Poseidon(maxOutputs);
-    for(var i = 0; i < maxOutputs; i++) {
+    for(var i = 0; i < nOutputs; i++) {
         commitmentsHasher.inputs[i] <== commitmentsOut[i];
+    }
+    for(var i = nOutputs; i < maxOutputs; i++){
+        commitmentsHasher.inputs[i] <== zeroLeaf;
     }
     component railgunTxidHasher = Poseidon(3);
     railgunTxidHasher.inputs[0] <== nullifiersHasher.out;
@@ -81,15 +87,15 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
 
 
     // 3. Check dummy inputs (i.e., with zero value)
-    component isDummy[maxInputs];
-    for(var i=0; i<maxInputs; i++) {
+    component isDummy[nInputs];
+    for(var i=0; i<nInputs; i++) {
         isDummy[i] = IsZero();
         isDummy[i].in <== valuesIn[i];
     }
 
     // 3. Verify nullifiers
-    component nullifiersHash[maxInputs];
-    for(var i=0; i<maxInputs; i++) {
+    component nullifiersHash[nInputs];
+    for(var i=0; i<nInputs; i++) {
         nullifiersHash[i] = NullifierCheck();
         nullifiersHash[i].nullifyingKey <== nullifyingKey;
         nullifiersHash[i].leafIndex <== utxoPositionsIn[i];
@@ -104,14 +110,14 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
     mpk.inputs[2] <== nullifyingKey;
 
     // 5. Verify Merkle proofs of membership
-    component noteCommitmentsIn[maxInputs];
-    component npkIn[maxInputs]; // note public keys
-    component merkleVerifier[maxInputs];
-    component inBlindedCommitment1[maxInputs];
-    component inBlindedCommitment2[maxInputs];
-    component checkInBlindedCommitment[maxInputs];
+    component noteCommitmentsIn[nInputs];
+    component npkIn[nInputs]; // note public keys
+    component merkleVerifier[nInputs];
+    component inBlindedCommitment1[nInputs];
+    component inBlindedCommitment2[nInputs];
+    component checkInBlindedCommitment[nInputs];
 
-    for(var i=0; i<maxInputs; i++) {
+    for(var i=0; i<nInputs; i++) {
         // Compute NPK
         npkIn[i] = Poseidon(2);
         npkIn[i].inputs[0] <== mpk.out;
@@ -152,13 +158,13 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         // were already checked as in railgunTxid
     }
 
-    component n2b[maxOutputs];
-    component outNoteHash[maxOutputs];
-    component outNoteChecker[maxOutputs];
-    component outBlindedCommitmentHasher[maxOutputs];
-    component isValueOutZero[maxOutputs];
+    component n2b[nOutputs];
+    component outNoteHash[nOutputs];
+    component outNoteChecker[nOutputs];
+    component outBlindedCommitmentHasher[nOutputs];
+    component isValueOutZero[nOutputs];
     // var sumOut = 0;
-    for(var i=0; i<maxOutputs; i++){
+    for(var i=0; i<nOutputs; i++){
 
         // We don't need to range check output amounts, since all outputs are valid UTXOs that
         // were already checked as in railgunTxid
@@ -187,5 +193,3 @@ template Step(MerkleTreeDepth, maxInputs, maxOutputs, zeroLeaf) {
         blindedCommitmentsOut[i] <== outBlindedCommitmentHasher[i].out*(1 - isValueOutZero[i].out);
     }
 }
-
-component main{public [anyRailgunTxidMerklerootAfterTransaction, poiMerkleroots]} = Step(16, 13, 13, 2051258411002736885948763699317990061539314419500486054347250703186609807356); // bytes32(uint256(keccak256("Railgun")) % SNARK_SCALAR_FIELD);

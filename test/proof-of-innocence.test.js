@@ -9,7 +9,7 @@ const tester = require("circom_tester").wasm;
 
 describe("Proof of Innocence", async () => {
   it("Should test POI circuit with mock inputs", async () => {
-    const circuit = await tester("./circuits/poi-transaction.circom", {
+    const circuit = await tester("./circuits/poi-transaction-13x13.circom", {
       reduceConstraints: false,
     });
 
