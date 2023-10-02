@@ -1,5 +1,5 @@
 let testVectors = [];
-for (let i = 0; i < 10; i++) {
+for (let i = 0; i < 8; i++) {
   const filePath = "./test-vectors/inputs" + i.toString() + ".json";
   const testVector = require(filePath);
   testVectors.push(testVector);

@@ -29,13 +29,15 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
     signal input randomsIn[nInputs];
     signal input valuesIn[nInputs];
     signal input utxoPositionsIn[nInputs];
-    signal input blindedCommitmentsIn[nInputs];
-    signal input creationTxidsIn[nInputs];
-    signal input utxoTreesIn;
+    signal input inputsTreeNumber;
+
 
     // Commitment notes data
     signal input npksOut[nOutputs]; // Recipients' NPK
     signal input valuesOut[nOutputs];
+    signal input outputsTreeNumber;
+    signal input outputStartIndex;
+    signal input unshieldData;
 
     // Railgun txid tree
     signal input railgunTxidMerkleProofIndices;
@@ -71,6 +73,11 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
     railgunTxidHasher.inputs[1] <== commitmentsHasher.out;
     railgunTxidHasher.inputs[2] <== boundParamsHash;
 
+    component txidTreeLeafHasher = Poseidon(3);
+    txidTreeLeafHasher.inputs[0] <== railgunTxidHasher.out;
+    txidTreeLeafHasher.inputs[1] <== inputsTreeNumber;
+    txidTreeLeafHasher.inputs[2] <== outputsTreeNumber * 65536 + outputStartIndex;
+
     //***********************************************************************
 
     // 2 - Check if railgunTxid is in the merkle tree
@@ -80,9 +87,15 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
         railgunTxidVerifier.pathElements[j] <== railgunTxidMerkleProofPathElements[j];
     }
     railgunTxidVerifier.leafIndex <== railgunTxidMerkleProofIndices;
-    railgunTxidVerifier.leaf <== railgunTxidHasher.out;
+    railgunTxidVerifier.leaf <== txidTreeLeafHasher.out;
     railgunTxidVerifier.enabled <== 1;
     //***********************************************************************
+
+    // 2.1 enforce unshieldData is either 0 or txid
+    component unshieldDataCheck = ForceEqualIfEnabled();
+    unshieldDataCheck.in[0] <== unshieldData;
+    unshieldDataCheck.in[1] <== railgunTxidHasher.out;
+    unshieldDataCheck.enabled <== unshieldData;
 
 
 
@@ -113,8 +126,7 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
     component noteCommitmentsIn[nInputs];
     component npkIn[nInputs]; // note public keys
     component merkleVerifier[nInputs];
-    component inBlindedCommitment1[nInputs];
-    component inBlindedCommitment2[nInputs];
+    component inBlindedCommitment[nInputs];
     component checkInBlindedCommitment[nInputs];
 
     for(var i=0; i<nInputs; i++) {
@@ -128,25 +140,13 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
         noteCommitmentsIn[i].inputs[1] <== token;
         noteCommitmentsIn[i].inputs[2] <== valuesIn[i];
 
-        inBlindedCommitment1[i] = Poseidon(3);
-        inBlindedCommitment1[i].inputs[0] <== noteCommitmentsIn[i].out;
-        inBlindedCommitment1[i].inputs[1] <== npkIn[i].out;
-        inBlindedCommitment1[i].inputs[2] <== utxoTreesIn * 65536 + utxoPositionsIn[i];
-
-        inBlindedCommitment2[i] = Poseidon(3);
-        inBlindedCommitment2[i].inputs[0] <== noteCommitmentsIn[i].out;
-        inBlindedCommitment2[i].inputs[1] <== npkIn[i].out;
-        inBlindedCommitment2[i].inputs[2] <== creationTxidsIn[i];
-
-
-        checkInBlindedCommitment[i] = ForceEqualIfEnabled();
-        checkInBlindedCommitment[i].in[0] <== (inBlindedCommitment1[i].out - blindedCommitmentsIn[i]) * (inBlindedCommitment2[i].out - blindedCommitmentsIn[i]);
-        checkInBlindedCommitment[i].in[1] <== 0;
-        checkInBlindedCommitment[i].enabled <== 1 - isDummy[i].out;
-
+        inBlindedCommitment[i] = Poseidon(3);
+        inBlindedCommitment[i].inputs[0] <== noteCommitmentsIn[i].out;
+        inBlindedCommitment[i].inputs[1] <== npkIn[i].out;
+        inBlindedCommitment[i].inputs[2] <== inputsTreeNumber * 65536 + utxoPositionsIn[i];
 
         merkleVerifier[i] = MerkleProofVerifier(MerkleTreeDepth);
-        merkleVerifier[i].leaf <== blindedCommitmentsIn[i];
+        merkleVerifier[i].leaf <== inBlindedCommitment[i].out;
         merkleVerifier[i].leafIndex <== poiInMerkleProofIndices[i];
         for(var j=0; j<MerkleTreeDepth; j++) {
             merkleVerifier[i].pathElements[j] <== poiInMerkleProofPathElements[i][j];
@@ -187,7 +187,7 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
         outBlindedCommitmentHasher[i] = Poseidon(3);
         outBlindedCommitmentHasher[i].inputs[0] <== commitmentsOut[i];
         outBlindedCommitmentHasher[i].inputs[1] <== npksOut[i];
-        outBlindedCommitmentHasher[i].inputs[2] <== railgunTxidHasher.out;
+        outBlindedCommitmentHasher[i].inputs[2] <== outputsTreeNumber * 65536 + outputStartIndex + i;
 
 
         blindedCommitmentsOut[i] <== outBlindedCommitmentHasher[i].out*(1 - isValueOutZero[i].out);
