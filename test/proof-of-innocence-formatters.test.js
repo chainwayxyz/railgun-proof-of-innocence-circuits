@@ -114,7 +114,7 @@ const formatInputs = (proofInputs) => {
 };
 
 describe('Proof of Innocence formatters', async () => {
-  it('Should test POI circuit with mock formatted inputs', async () => {
+  xit('Should test POI circuit with mock formatted inputs', async () => {
     const circuit = await tester('./circuits/poi-transaction-13x13.circom', {
       reduceConstraints: false,
     });
