@@ -29,15 +29,15 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
     signal input randomsIn[nInputs];
     signal input valuesIn[nInputs];
     signal input utxoPositionsIn[nInputs];
-    signal input inputsTreeNumber;
+    signal input utxoTreeIn;
 
 
     // Commitment notes data
     signal input npksOut[nOutputs]; // Recipients' NPK
     signal input valuesOut[nOutputs];
-    signal input outputsTreeNumber;
-    signal input outputStartIndex;
-    signal input unshieldData;
+    signal input utxoTreeOut;
+    signal input utxoBatchStartPositionOut;
+    signal input railgunTxidIfHasUnshield;
 
     // Railgun txid tree
     signal input railgunTxidMerkleProofIndices;
@@ -75,8 +75,8 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
 
     component txidTreeLeafHasher = Poseidon(3);
     txidTreeLeafHasher.inputs[0] <== railgunTxidHasher.out;
-    txidTreeLeafHasher.inputs[1] <== inputsTreeNumber;
-    txidTreeLeafHasher.inputs[2] <== outputsTreeNumber * 65536 + outputStartIndex;
+    txidTreeLeafHasher.inputs[1] <== utxoTreeIn;
+    txidTreeLeafHasher.inputs[2] <== utxoTreeOut * 65536 + utxoBatchStartPositionOut;
 
     //***********************************************************************
 
@@ -91,11 +91,11 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
     railgunTxidVerifier.enabled <== 1;
     //***********************************************************************
 
-    // 2.1 enforce unshieldData is either 0 or txid
-    component unshieldDataCheck = ForceEqualIfEnabled();
-    unshieldDataCheck.in[0] <== unshieldData;
-    unshieldDataCheck.in[1] <== railgunTxidHasher.out;
-    unshieldDataCheck.enabled <== unshieldData;
+    // 2.1 enforce railgunTxidIfHasUnshield is either 0 or txid
+    component railgunTxidIfHasUnshieldCheck = ForceEqualIfEnabled();
+    railgunTxidIfHasUnshieldCheck.in[0] <== railgunTxidIfHasUnshield;
+    railgunTxidIfHasUnshieldCheck.in[1] <== railgunTxidHasher.out;
+    railgunTxidIfHasUnshieldCheck.enabled <== railgunTxidIfHasUnshield;
 
 
 
@@ -143,7 +143,7 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
         inBlindedCommitment[i] = Poseidon(3);
         inBlindedCommitment[i].inputs[0] <== noteCommitmentsIn[i].out;
         inBlindedCommitment[i].inputs[1] <== npkIn[i].out;
-        inBlindedCommitment[i].inputs[2] <== inputsTreeNumber * 65536 + utxoPositionsIn[i];
+        inBlindedCommitment[i].inputs[2] <== utxoTreeIn * 65536 + utxoPositionsIn[i];
 
         merkleVerifier[i] = MerkleProofVerifier(MerkleTreeDepth);
         merkleVerifier[i].leaf <== inBlindedCommitment[i].out;
@@ -187,7 +187,7 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
         outBlindedCommitmentHasher[i] = Poseidon(3);
         outBlindedCommitmentHasher[i].inputs[0] <== commitmentsOut[i];
         outBlindedCommitmentHasher[i].inputs[1] <== npksOut[i];
-        outBlindedCommitmentHasher[i].inputs[2] <== outputsTreeNumber * 65536 + outputStartIndex + i;
+        outBlindedCommitmentHasher[i].inputs[2] <== utxoTreeOut * 65536 + utxoBatchStartPositionOut + i;
 
 
         blindedCommitmentsOut[i] <== outBlindedCommitmentHasher[i].out*(1 - isValueOutZero[i].out);
