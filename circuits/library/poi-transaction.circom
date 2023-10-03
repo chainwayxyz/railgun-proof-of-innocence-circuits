@@ -10,6 +10,7 @@ include "./nullifier-check.circom";
 template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLeaf) {
     //********************** Public Signals *********************************
     signal input anyRailgunTxidMerklerootAfterTransaction;
+    signal input railgunTxidIfHasUnshield;
     signal input poiMerkleroots[nInputs];
     signal output blindedCommitmentsOut[nOutputs];
     //***********************************************************************
@@ -37,7 +38,6 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
     signal input valuesOut[nOutputs];
     signal input utxoTreeOut;
     signal input utxoBatchStartPositionOut;
-    signal input railgunTxidIfHasUnshield;
 
     // Railgun txid tree
     signal input railgunTxidMerkleProofIndices;
