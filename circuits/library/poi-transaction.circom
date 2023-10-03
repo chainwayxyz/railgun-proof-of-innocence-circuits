@@ -127,7 +127,6 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
     component npkIn[nInputs]; // note public keys
     component merkleVerifier[nInputs];
     component inBlindedCommitment[nInputs];
-    component checkInBlindedCommitment[nInputs];
 
     for(var i=0; i<nInputs; i++) {
         // Compute NPK
@@ -158,7 +157,6 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
         // were already checked as in railgunTxid
     }
 
-    component n2b[nOutputs];
     component outNoteHash[nOutputs];
     component outNoteChecker[nOutputs];
     component outBlindedCommitmentHasher[nOutputs];
