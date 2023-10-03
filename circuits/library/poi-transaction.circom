@@ -187,7 +187,7 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
         outBlindedCommitmentHasher[i] = Poseidon(3);
         outBlindedCommitmentHasher[i].inputs[0] <== commitmentsOut[i];
         outBlindedCommitmentHasher[i].inputs[1] <== npksOut[i];
-        outBlindedCommitmentHasher[i].inputs[2] <== utxoBatchStartPositionOut + i;
+        outBlindedCommitmentHasher[i].inputs[2] <== utxoTreeOut * 65536 + utxoBatchStartPositionOut + i;
 
 
         blindedCommitmentsOut[i] <== outBlindedCommitmentHasher[i].out*(1 - isValueOutZero[i].out);
