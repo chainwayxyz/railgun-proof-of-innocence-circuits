@@ -32,12 +32,10 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
     signal input utxoPositionsIn[nInputs];
     signal input utxoTreeIn;
 
-
     // Commitment notes data
     signal input npksOut[nOutputs]; // Recipients' NPK
     signal input valuesOut[nOutputs];
-    signal input utxoTreeOut;
-    signal input utxoBatchStartPositionOut;
+    signal input utxoBatchGlobalStartPositionOut;
 
     // Railgun txid tree
     signal input railgunTxidMerkleProofIndices;
@@ -76,7 +74,7 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
     component txidTreeLeafHasher = Poseidon(3);
     txidTreeLeafHasher.inputs[0] <== railgunTxidHasher.out;
     txidTreeLeafHasher.inputs[1] <== utxoTreeIn;
-    txidTreeLeafHasher.inputs[2] <== utxoTreeOut * 65536 + utxoBatchStartPositionOut;
+    txidTreeLeafHasher.inputs[2] <== utxoBatchGlobalStartPositionOut;
 
     //***********************************************************************
 
@@ -152,16 +150,12 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
         }
         merkleVerifier[i].merkleRoot <== poiMerkleroots[i];
         merkleVerifier[i].enabled <== 1 - isDummy[i].out;
-
-        // We don't need to range check input amounts, since all inputs are valid UTXOs that
-        // were already checked as in railgunTxid
     }
 
     component outNoteHash[nOutputs];
     component outNoteChecker[nOutputs];
     component outBlindedCommitmentHasher[nOutputs];
     component isValueOutZero[nOutputs];
-    // var sumOut = 0;
     for(var i=0; i<nOutputs; i++){
 
         // We don't need to range check output amounts, since all outputs are valid UTXOs that
@@ -185,7 +179,7 @@ template Step(MerkleTreeDepth, nInputs, nOutputs, maxInputs, maxOutputs, zeroLea
         outBlindedCommitmentHasher[i] = Poseidon(3);
         outBlindedCommitmentHasher[i].inputs[0] <== commitmentsOut[i];
         outBlindedCommitmentHasher[i].inputs[1] <== npksOut[i];
-        outBlindedCommitmentHasher[i].inputs[2] <== utxoTreeOut * 65536 + utxoBatchStartPositionOut + i;
+        outBlindedCommitmentHasher[i].inputs[2] <== utxoBatchGlobalStartPositionOut + i;
 
 
         blindedCommitmentsOut[i] <== outBlindedCommitmentHasher[i].out*(1 - isValueOutZero[i].out);
