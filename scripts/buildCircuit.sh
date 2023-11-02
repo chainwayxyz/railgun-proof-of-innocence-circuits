@@ -41,7 +41,8 @@ npx snarkjs zkey export verificationkey artifacts/circuits/poi-transaction-$1x$1
 mkdir -p artifacts/circuits/POI_$1x$1
 
 # Move and compress final files
-mv artifacts/circuits/poi-transaction-$1x$1.zkey artifacts/circuits/POI_$1x$1/zkey.br
+brotli artifacts/circuits/poi-transaction-$1x$1.zkey
+mv artifacts/circuits/poi-transaction-$1x$1.zkey.br artifacts/circuits/POI_$1x$1/zkey.br
 brotli artifacts/circuits/poi-transaction-$1x$1_js/poi-transaction-$1x$1.wasm
 mv artifacts/circuits/poi-transaction-$1x$1_js/poi-transaction-$1x$1.wasm.br artifacts/circuits/POI_$1x$1/wasm.br
 brotli artifacts/circuits/poi-transaction-$1x$1_cpp/poi-transaction-$1x$1.dat
