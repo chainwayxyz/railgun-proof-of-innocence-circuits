@@ -4,10 +4,11 @@
   "version": "2.0.0",
   "description": "ZK-SNARK circuits for RAILGUN Proof of Innocene",
   "scripts": {
-    "test": " mocha --exit --timeout 30000",
+    "test": " mocha --exit --timeout 30000000",
     "compile": "circom circuits/poi-transaction.circom --r1cs --wasm -o artifacts/circuits",
     "launch": "circom circuits/poi-launch.circom --r1cs --wasm -o artifacts/circuits",
-    "build": "bash scripts/buildCircuit.sh",
+    "build": "bash scripts/buildCircuit.sh 13;bash scripts/buildCircuit.sh 3",
+    "build3": "bash scripts/buildCircuit.sh 3",
     "postinstall": "patch-package"
   },
   "devDependencies": {
